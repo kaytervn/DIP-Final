@@ -3,4 +3,4 @@ opencv-python-headless
 joblib
 streamlit
 os
-Image
+Pillow
