@@ -1,0 +1,6 @@
+numpy
+opencv-python-headless
+joblib
+streamlit
+os
+Image
