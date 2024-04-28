@@ -2,10 +2,7 @@ import streamlit as st
 
 
 def run():
-    st.set_page_config(
-        page_title="DIP Final",
-        page_icon="🍪",
-    )
+    st.set_page_config(page_title="DIP Final", page_icon="🍪", layout="wide")
 
     st.write("# Welcome to Streamlit! 👋")
 

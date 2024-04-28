@@ -61,7 +61,7 @@ def process_output(out, box_scale):
 
 
 def drawPred(frame, classId, conf, left, top, right, bottom):
-    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0))
+    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), thickness=2)
     label = f"{classes[classId]}: {conf:.2f}"
     labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
     top = max(top, labelSize[1])
@@ -75,25 +75,46 @@ def drawPred(frame, classId, conf, left, top, right, bottom):
     cv2.putText(frame, label, (left, top), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
 
 
+def center_crop_resize(image, target_size):
+    height, width = image.shape[:2]
+    crop_size = min(height, width)
+    y = (height - crop_size) // 2
+    x = (width - crop_size) // 2
+    cropped_image = image[y : y + crop_size, x : x + crop_size]
+    resized_image = cv2.resize(cropped_image, target_size)
+    return resized_image
+
+
 def app():
-    st.set_page_config(page_title="Object Detection", page_icon="🍎")
+    st.set_page_config(page_title="Object Detection", page_icon="🍎", layout="wide")
     st.title("🍎​ Object Detection")
     st.write(
-        "The fruit recognition program includes 5 types of fruits: grapefruit, durian, apple, dragon fruit, and pineapple."
+        "This program detects 5 types of fruits: grapefruit, durian, apple, dragon fruit, and pineapple."
     )
     st.sidebar.title("Object Detection")
-    st.sidebar.write("Browse the image, then click the 'Predict' button for detection.")
+    st.sidebar.write("Browse an image, then click the 'Predict' button for detection.")
 
     img_file_buffer = st.file_uploader(
         "Choose image", type=["bmp", "png", "jpg", "jpeg", "tif", "gif"]
     )
 
+    cols = st.columns(2)
+
     if img_file_buffer is not None:
         image = Image.open(img_file_buffer)
         frame = np.array(image)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        st.image(image)
-        if st.button("Predict"):
+        frame = center_crop_resize(frame, (inpWidth, inpHeight))
+
+        with cols[0]:
+            st.subheader("Input")
+            st.image(frame, channels="BGR")
+
+        with cols[1]:
+            text_container = st.empty()
+            img_container = st.empty()
+
+        if st.sidebar.button("Predict"):
             blob = cv2.dnn.blobFromImage(
                 frame, size=(inpWidth, inpHeight), swapRB=True, ddepth=cv2.CV_8U
             )
@@ -102,9 +123,8 @@ def app():
                 st.session_state["Net"].getUnconnectedOutLayersNames()
             )
             postprocess(frame, outs)
-            frame = cv2.resize(frame, (inpWidth, inpHeight))
-            st.subheader("Result")
-            st.image(frame, channels="BGR")
+            text_container.subheader("Result")
+            img_container.image(frame, channels="BGR")
 
 
 app()

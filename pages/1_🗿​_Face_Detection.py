@@ -13,7 +13,7 @@ face_recognition_model = os.path.join(
     parent_dir, "models", "face_recognition_sface_2021dec.onnx"
 )
 svc = os.path.join(parent_dir, "models", "svc.pkl")
-
+inpWidth, inpHeight = 640, 640
 score_threshold = 0.9
 nms_threshold = 0.3
 top_k = 5000
@@ -76,33 +76,39 @@ def checkValidFace(frame, face_box):
         return None
 
 
+def center_crop_resize(image, target_size):
+    height, width = image.shape[:2]
+    crop_size = min(height, width)
+    y = (height - crop_size) // 2
+    x = (width - crop_size) // 2
+    cropped_image = image[y : y + crop_size, x : x + crop_size]
+    resized_image = cv2.resize(cropped_image, target_size)
+    return resized_image
+
+
 def app():
-    def process(capture, frame_skip=1):
+    def process(capture, container, frame_skip=1):
         cap = cv2.VideoCapture(capture)
-        frameWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         detector = cv2.FaceDetectorYN.create(
             face_detection_model,
             "",
-            (frameWidth, frameHeight),
+            (inpWidth, inpHeight),
             score_threshold,
             nms_threshold,
             top_k,
         )
-        detector.setInputSize([frameWidth, frameHeight])
+        detector.setInputSize([inpWidth, inpHeight])
         tm = cv2.TickMeter()
-        img_container = st.empty()
         cur_frame = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-
+            frame = center_crop_resize(frame, (inpWidth, inpHeight))
             tm.start()
             faces = detector.detect(frame)
             tm.stop()
-
             if cur_frame % frame_skip == 0:
                 if faces[1] is not None:
                     for face_box in faces[1]:
@@ -124,19 +130,38 @@ def app():
                         )
                 visualize(frame, faces, tm.getFPS())
                 try:
-                    img_container.image(frame, channels="BGR")
+                    container.image(frame, channels="BGR")
                 except Exception as e:
-                    st.error(f"Error displaying frame: {e}")
                     cur_frame = 0
 
             cur_frame += 1
         cap.release()
 
-    st.set_page_config(page_title="Face Detection", page_icon="🗿")
+    def reset_display():
+        subheader_container.empty()
+        uploaded_containter.empty()
+        cam_container.empty()
+        input_container.empty()
+        video_container.empty()
+        result_container.empty()
+        img_container.empty()
+
+    st.set_page_config(page_title="Face Detection", page_icon="🗿", layout="wide")
     st.title("🗿 Face Detection")
     st.write(
         "This program detects 5 specific faces, displays the names in each frame, and if a face is not found in the dataset, it will be displayed as 'Unknown' with a red frame."
     )
+
+    subheader_container = st.empty()
+    uploaded_containter = st.empty()
+    cam_container = st.empty()
+    cols = st.columns(2)
+    with cols[0]:
+        input_container = st.empty()
+        video_container = st.empty()
+    with cols[1]:
+        result_container = st.empty()
+        img_container = st.empty()
 
     selected_option = st.sidebar.selectbox(
         "Select an option",
@@ -145,17 +170,22 @@ def app():
     )
 
     if selected_option == "Realtime Video Capture":
-        st.subheader("Realtime Video Capture")
-        process(0)
+        subheader_container.subheader("Realtime Video Capture")
+        reset_display()
+        process(0, cam_container)
 
     elif selected_option == "Upload Video to Detect":
-        st.subheader("Upload Video to Detect")
-        uploaded_video = st.file_uploader("Choose video", type=["mp4", "mov"])
+        subheader_container.subheader("Upload Video to Detect")
+        reset_display()
+        uploaded_video = uploaded_containter.file_uploader(
+            "Choose video", type=["mp4", "mov"]
+        )
 
         if uploaded_video:
-            st.video(uploaded_video.name)
-            st.subheader("Result")
-            process(uploaded_video.name, 5)
+            input_container.subheader("Input")
+            video_container.video(uploaded_video.name)
+            result_container.subheader("Result")
+            process(uploaded_video.name, img_container, 5)
 
 
 app()
