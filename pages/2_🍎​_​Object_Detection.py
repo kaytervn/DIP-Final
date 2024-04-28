@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import cv2
 import os
+from utils import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -75,16 +76,6 @@ def drawPred(frame, classId, conf, left, top, right, bottom):
     cv2.putText(frame, label, (left, top), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
 
 
-def center_crop_resize(image, target_size):
-    height, width = image.shape[:2]
-    crop_size = min(height, width)
-    y = (height - crop_size) // 2
-    x = (width - crop_size) // 2
-    cropped_image = image[y : y + crop_size, x : x + crop_size]
-    resized_image = cv2.resize(cropped_image, target_size)
-    return resized_image
-
-
 def app():
     st.set_page_config(page_title="Object Detection", page_icon="🍎", layout="wide")
     st.title("🍎​ Object Detection")
@@ -104,7 +95,7 @@ def app():
         image = Image.open(img_file_buffer)
         frame = np.array(image)
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        frame = center_crop_resize(frame, (inpWidth, inpHeight))
+        frame = standardize_image(frame, (inpWidth, inpHeight))
 
         with cols[0]:
             st.subheader("Input")

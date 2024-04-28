@@ -3,6 +3,7 @@ import cv2
 import joblib
 import streamlit as st
 import os
+from utils import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -76,16 +77,6 @@ def checkValidFace(frame, face_box):
         return None
 
 
-def center_crop_resize(image, target_size):
-    height, width = image.shape[:2]
-    crop_size = min(height, width)
-    y = (height - crop_size) // 2
-    x = (width - crop_size) // 2
-    cropped_image = image[y : y + crop_size, x : x + crop_size]
-    resized_image = cv2.resize(cropped_image, target_size)
-    return resized_image
-
-
 def app():
     def process(capture, container, frame_skip=1):
         cap = cv2.VideoCapture(capture)
@@ -105,7 +96,7 @@ def app():
             ret, frame = cap.read()
             if not ret:
                 break
-            frame = center_crop_resize(frame, (inpWidth, inpHeight))
+            frame = standardize_image(frame, (inpWidth, inpHeight))
             tm.start()
             faces = detector.detect(frame)
             tm.stop()

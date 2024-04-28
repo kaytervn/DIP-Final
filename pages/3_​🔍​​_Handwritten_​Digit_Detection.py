@@ -1,11 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras import datasets, models, optimizers
 import numpy as np
-import cv2
-import tkinter as tk
-from PIL import Image, ImageTk
 import os
 import streamlit as st
+from utils import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -22,16 +20,6 @@ model.compile(
 (_, _), (X_test, _) = datasets.mnist.load_data()
 
 X_test = X_test.reshape((10000, 28, 28, 1))
-
-
-def center_crop_resize(image, target_size):
-    height, width = image.shape[:2]
-    crop_size = min(height, width)
-    y = (height - crop_size) // 2
-    x = (width - crop_size) // 2
-    cropped_image = image[y : y + crop_size, x : x + crop_size]
-    resized_image = cv2.resize(cropped_image, target_size)
-    return resized_image
 
 
 def app():
@@ -81,7 +69,7 @@ def app():
         )
 
     st.set_page_config(
-        page_title="Handwritten Digit Detection", page_icon="🔍​​​", layout="wide"
+        page_title="Handwritten Digit Detection", page_icon="​📖​​​", layout="wide"
     )
     st.title("🔍 Handwritten Digit Detection")
     st.sidebar.title("MNIST Recognition")
