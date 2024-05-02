@@ -4,6 +4,8 @@ import joblib
 import streamlit as st
 import os
 from utils import *
+from streamlit_webrtc import webrtc_streamer
+import av
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -20,8 +22,42 @@ nms_threshold = 0.3
 top_k = 5000
 recognizer = cv2.FaceRecognizerSF.create(face_recognition_model, "")
 
+detector = cv2.FaceDetectorYN.create(
+    face_detection_model,
+    "",
+    (inpWidth, inpHeight),
+    score_threshold,
+    nms_threshold,
+    top_k,
+)
+detector.setInputSize([inpWidth, inpHeight])
+
+tm = cv2.TickMeter()
+
 svc = joblib.load(svc)
 mydict = ["CongPhan", "DucTrong", "HPCong", "Loki", "ThayDuc"]
+
+st.set_page_config(page_title="Face Detection", page_icon="🗿")
+st.title("🗿 Face Detection")
+st.write(
+    "This program detects 5 specific faces, displays the names in each frame, and if a face is not found in the dataset, it will be displayed as 'Unknown' with a red frame."
+)
+
+uploaded_containter = st.empty()
+cam_container = st.empty()
+cols = st.columns(2)
+with cols[0]:
+    input_container = st.empty()
+    video_container = st.empty()
+with cols[1]:
+    result_container = st.empty()
+    img_container = st.empty()
+
+selected_option = st.sidebar.selectbox(
+    "Select an option",
+    ["Realtime Video Capture", "Upload Video to Detect"],
+    index=0,
+)
 
 
 def visualize(input, faces, fps, thickness=2):
@@ -77,6 +113,35 @@ def checkValidFace(frame, face_box):
         return None
 
 
+def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+    image = frame.to_ndarray(format="bgr24")
+    image = standardize_image(image, (inpWidth, inpHeight))
+    image = cv2.addWeighted(image, 1.5, np.zeros(image.shape, image.dtype), 0, 0)
+    tm.start()
+    faces = detector.detect(image)
+    tm.stop()
+    if faces[1] is not None:
+        for face_box in faces[1]:
+            test_predict = checkValidFace(image, face_box)
+            if test_predict:
+                result = mydict[test_predict[0]]
+                color = (0, 255, 0)
+            else:
+                result = "Unknown"
+                color = (0, 0, 255)
+            cv2.putText(
+                image,
+                result,
+                (int(face_box[0]), int(face_box[1]) - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                color,
+                2,
+            )
+        visualize(image, faces, tm.getFPS())
+    return av.VideoFrame.from_ndarray(image, format="bgr24")
+
+
 def app():
     def process(capture, container, frame_skip=1):
         cap = cv2.VideoCapture(capture)
@@ -129,7 +194,6 @@ def app():
         cap.release()
 
     def reset_display():
-        subheader_container.empty()
         uploaded_containter.empty()
         cam_container.empty()
         input_container.empty()
@@ -137,36 +201,16 @@ def app():
         result_container.empty()
         img_container.empty()
 
-    st.set_page_config(page_title="Face Detection", page_icon="🗿", layout="wide")
-    st.title("🗿 Face Detection")
-    st.write(
-        "This program detects 5 specific faces, displays the names in each frame, and if a face is not found in the dataset, it will be displayed as 'Unknown' with a red frame."
-    )
-
-    subheader_container = st.empty()
-    uploaded_containter = st.empty()
-    cam_container = st.empty()
-    cols = st.columns(2)
-    with cols[0]:
-        input_container = st.empty()
-        video_container = st.empty()
-    with cols[1]:
-        result_container = st.empty()
-        img_container = st.empty()
-
-    selected_option = st.sidebar.selectbox(
-        "Select an option",
-        ["Realtime Video Capture", "Upload Video to Detect"],
-        index=0,
-    )
-
     if selected_option == "Realtime Video Capture":
-        subheader_container.subheader("Realtime Video Capture")
         reset_display()
-        process(0, cam_container)
+        webrtc_streamer(
+            key="face-detection",
+            video_frame_callback=video_frame_callback,
+            media_stream_constraints={"video": True, "audio": False},
+            async_processing=True,
+        )
 
     elif selected_option == "Upload Video to Detect":
-        subheader_container.subheader("Upload Video to Detect")
         reset_display()
         uploaded_video = uploaded_containter.file_uploader(
             "Choose video", type=["mp4", "mov"]
