@@ -1,4 +1,4 @@
-opencv-python-headless
+opencv-python-headless==4.8.1.78
 joblib
 streamlit
 Pillow
@@ -7,4 +7,3 @@ numpy
 mediapipe
 scikit-learn
 streamlit_webrtc==0.47.1
-av
