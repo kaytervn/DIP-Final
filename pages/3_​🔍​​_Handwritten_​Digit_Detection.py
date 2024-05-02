@@ -7,10 +7,11 @@ from utils import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-model_architecture = os.path.join(parent_dir, "models", "digit_config.json")
-model_weights = os.path.join(parent_dir, "models", "digit_weight.h5")
-model = models.model_from_json(open(model_architecture).read())
-model.load_weights(model_weights)
+model_path = os.path.join(parent_dir, "models", "digit_model")
+
+# Load model
+model = tf.keras.models.load_model(model_path)
+
 OPTIMIZER = tf.keras.optimizers.Adam()
 inpWidth, inpHeight = 640, 640
 model.compile(
