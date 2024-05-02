@@ -2,7 +2,7 @@ opencv-python-headless
 joblib
 streamlit
 Pillow
-tensorflow
+tensorflow==2.13.1
 numpy
 mediapipe
 scikit-learn
