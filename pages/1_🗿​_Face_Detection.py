@@ -113,7 +113,7 @@ def checkValidFace(frame, face_box):
         return None
 
 
-def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+def video_frame_callback(frame):
     image = frame.to_ndarray(format="bgr24")
     image = standardize_image(image, (inpWidth, inpHeight))
     image = cv2.addWeighted(image, 1.5, np.zeros(image.shape, image.dtype), 0, 0)
