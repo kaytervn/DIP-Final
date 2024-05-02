@@ -207,7 +207,6 @@ def app():
             key="face-detection",
             video_frame_callback=video_frame_callback,
             media_stream_constraints={"video": True, "audio": False},
-            async_processing=True,
         )
 
     elif selected_option == "Upload Video to Detect":
