@@ -15,7 +15,7 @@ face_recognition_model = os.path.join(
 )
 svc = os.path.join(parent_dir, "models", "svc.pkl")
 inpWidth, inpHeight = 640, 640
-score_threshold = 0.9
+score_threshold = 0.5
 nms_threshold = 0.3
 top_k = 5000
 recognizer = cv2.FaceRecognizerSF.create(face_recognition_model, "")
