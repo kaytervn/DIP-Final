@@ -111,7 +111,9 @@ def app():
         if st.sidebar.button("Process"):
             result = process_image(None, operation)
             input_container.subheader("Result")
-            imagein_container.image(result)
+            imagein_container.image(
+                standardize_image_gray(result, (inpWidth, inpHeight))
+            )
 
     elif upload_image is not None:
         input_container.subheader("Input")
@@ -133,7 +135,6 @@ def app():
                 operation == "C4. Remove Moire"
                 or operation == "C5. Denoise Motion"
                 or operation == "C5. Denoisest Motion"
-                or operation == "C9. Connected Component"
             ):
                 result = process_image(process_img, operation)
                 imageout_container.image(

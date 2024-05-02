@@ -46,6 +46,9 @@ def PiecewiseLinear(imgin):
     M, N = imgin.shape
     imgout = np.zeros((M, N), np.uint8)
     rmin, rmax, _, _ = cv2.minMaxLoc(imgin)
+    if rmin == rmax:
+        imgout[:] = rmin
+        return imgout
     r1 = rmin
     s1 = 0
     r2 = rmax
@@ -53,12 +56,12 @@ def PiecewiseLinear(imgin):
     for x in range(0, M):
         for y in range(0, N):
             r = imgin[x, y]
-            if r < r1:
-                s = s1 / r1 * r
-            elif r < r2:
-                s = (s2 - s1) / (r2 - r1) * (r - r1) + s1
+            if r <= r1:
+                s = s1
+            elif r >= r2:
+                s = s2
             else:
-                s = (L - 1 - s2) / (L - 1 - r2) * (r - r2) + s2
+                s = int((s2 - s1) * (r - r1) / (r2 - r1) + s1)
             imgout[x, y] = np.uint8(s)
     return imgout
 
