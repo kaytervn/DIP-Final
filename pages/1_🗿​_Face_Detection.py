@@ -218,7 +218,8 @@ def app():
 
         if uploaded_video:
             input_container.subheader("Input")
-            video_container.video(uploaded_video.name)
+            with open(uploaded_video.name, "rb") as v:
+                video_container.video(v)
             result_container.subheader("Result")
             process(uploaded_video.name, img_container, 5)
 

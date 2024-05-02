@@ -6,5 +6,5 @@ tensorflow==2.13.1
 numpy
 mediapipe
 scikit-learn
-streamlit-webrtc
+streamlit_webrtc==0.47.1
 av
