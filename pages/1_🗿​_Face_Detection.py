@@ -21,13 +21,13 @@ top_k = 5000
 recognizer = cv2.FaceRecognizerSF.create(face_recognition_model, "")
 
 svc = joblib.load(svc)
-mydict = ["CongPhan", "DucTrong", "HPCong", "Loki", "ThayDuc"]
+mydict = ["DucTrong", "HuuTai", "ThanhLoi", "TrongDung", "VanTrung"]
 
 
 def visualize(input, faces, fps, thickness=2):
     if faces[1] is not None:
         for face in faces[1]:
-            if checkValidFace(input, face):
+            if checkValidFace(input, face) is not None:
                 color = (0, 255, 0)
             else:
                 color = (0, 0, 255)
@@ -104,7 +104,7 @@ def app():
                 if faces[1] is not None:
                     for face_box in faces[1]:
                         test_predict = checkValidFace(frame, face_box)
-                        if test_predict:
+                        if test_predict is not None:
                             result = mydict[test_predict[0]]
                             color = (0, 255, 0)
                         else:
