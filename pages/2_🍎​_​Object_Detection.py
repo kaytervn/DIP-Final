@@ -7,8 +7,8 @@ from utils import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-model = os.path.join(parent_dir, "models", "trai_cay.onnx")
-filename_classes = os.path.join(parent_dir, "models", "trai_cay.txt")
+model = os.path.join(parent_dir, "models", "animal_detection.onnx")
+filename_classes = os.path.join(parent_dir, "models", "animal.txt")
 inpWidth, inpHeight = 640, 640
 confThreshold, nmsThreshold = 0.5, 0.4
 classes = None
@@ -80,7 +80,7 @@ def app():
     st.set_page_config(page_title="Object Detection", page_icon="🍎", layout="wide")
     st.title("🍎​ Object Detection")
     st.write(
-        "This program detects 5 types of fruits: grapefruit, durian, apple, dragon fruit, and pineapple."
+        "This program detects 5 types of animals: capybara, hedgehog, kangaroo, panda, penguin."
     )
     st.sidebar.title("Object Detection")
     st.sidebar.write("Browse an image, then click the 'Predict' button for detection.")
