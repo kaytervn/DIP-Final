@@ -4,6 +4,7 @@ import joblib
 import streamlit as st
 import os
 from utils import *
+import tempfile
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -66,68 +67,67 @@ def checkValidFace(frame, face_box):
         return None
 
 
-def checkValidFace(frame, face_box):
-    face_align = recognizer.alignCrop(frame, face_box)
-    face_feature = recognizer.feature(face_align)
-    test_predict = svc.predict(face_feature)
-    confidence = np.max(np.abs(svc.decision_function(face_feature)))
-    if confidence > score_threshold:
-        return test_predict
-    else:
-        return None
+def process(capture, container, frame_skip=1):
+    if isinstance(capture, int):  # Realtime Video Capture
+        cap = cv2.VideoCapture(capture)
+    else:  # Upload Video to Detect
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(capture.read())
+            tmp_name = tmp.name
+        cap = cv2.VideoCapture(tmp_name)
+
+    detector = cv2.FaceDetectorYN.create(
+        face_detection_model,
+        "",
+        (inpWidth, inpHeight),
+        score_threshold,
+        nms_threshold,
+        top_k,
+    )
+    detector.setInputSize([inpWidth, inpHeight])
+    tm = cv2.TickMeter()
+    cur_frame = 0
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = standardize_image(frame, (inpWidth, inpHeight))
+        tm.start()
+        faces = detector.detect(frame)
+        tm.stop()
+        if cur_frame % frame_skip == 0:
+            if faces[1] is not None:
+                for face_box in faces[1]:
+                    test_predict = checkValidFace(frame, face_box)
+                    if test_predict is not None:
+                        result = mydict[test_predict[0]]
+                        color = (0, 255, 0)
+                    else:
+                        result = "Unknown"
+                        color = (0, 0, 255)
+                    cv2.putText(
+                        frame,
+                        result,
+                        (int(face_box[0]), int(face_box[1]) - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        color,
+                        2,
+                    )
+            visualize(frame, faces, tm.getFPS())
+            try:
+                container.image(frame, channels="BGR")
+            except Exception as e:
+                cur_frame = 0
+
+        cur_frame += 1
+    cap.release()
+    if not isinstance(capture, int):  # Xóa file tạm thời nếu cần
+        os.unlink(tmp_name)
 
 
 def app():
-    def process(capture, container, frame_skip=1):
-        cap = cv2.VideoCapture(capture)
-        detector = cv2.FaceDetectorYN.create(
-            face_detection_model,
-            "",
-            (inpWidth, inpHeight),
-            score_threshold,
-            nms_threshold,
-            top_k,
-        )
-        detector.setInputSize([inpWidth, inpHeight])
-        tm = cv2.TickMeter()
-        cur_frame = 0
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            frame = standardize_image(frame, (inpWidth, inpHeight))
-            tm.start()
-            faces = detector.detect(frame)
-            tm.stop()
-            if cur_frame % frame_skip == 0:
-                if faces[1] is not None:
-                    for face_box in faces[1]:
-                        test_predict = checkValidFace(frame, face_box)
-                        if test_predict is not None:
-                            result = mydict[test_predict[0]]
-                            color = (0, 255, 0)
-                        else:
-                            result = "Unknown"
-                            color = (0, 0, 255)
-                        cv2.putText(
-                            frame,
-                            result,
-                            (int(face_box[0]), int(face_box[1]) - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            color,
-                            2,
-                        )
-                visualize(frame, faces, tm.getFPS())
-                try:
-                    container.image(frame, channels="BGR")
-                except Exception as e:
-                    cur_frame = 0
-
-            cur_frame += 1
-        cap.release()
-
     def reset_display():
         uploaded_containter.empty()
         cam_container.empty()
@@ -165,14 +165,14 @@ def app():
     elif selected_option == "Upload Video to Detect":
         reset_display()
         uploaded_video = uploaded_containter.file_uploader(
-            "Choose video", type=["mp4", "mov"]
+            "Choose video", type=["mp4", "mov", "avi"]
         )
 
         if uploaded_video:
             input_container.subheader("Input")
-            video_container.video(uploaded_video.name)
+            video_container.video(uploaded_video)
             result_container.subheader("Result")
-            process(uploaded_video.name, img_container, 5)
+            process(uploaded_video, img_container, 5)
 
 
 app()
